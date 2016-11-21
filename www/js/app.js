@@ -42,7 +42,7 @@ angular.module('starter', ['ionic', 'ngCordova'])
                showLocation(latLng);
            }
 
-           function prepareAutoComplete( map) {
+           function prepareAutoComplete(map) {
                var input = (document.getElementById('pac-input'));
                var autocomplete = new google.maps.places.Autocomplete(input);
                autocomplete.bindTo('bounds', map);
@@ -52,20 +52,13 @@ angular.module('starter', ['ionic', 'ngCordova'])
            }
 
            function showLocation(latLng) {
-               var mapOptions = {
-                   center: latLng,
-                   zoom: 17,
-                   mapTypeId: google.maps.MapTypeId.ROADMAP,
-                   disableDefaultUI: true,
-               }
-
-               var map = new google.maps.Map(document.getElementById('map'), mapOptions);
+               var map = createMap(latLng);
                var service = new google.maps.places.PlacesService(map);
 
                markAllAtmsInTheArea(latLng);
                var autocomplete = prepareAutoComplete(map);
 
-               
+
                function callback(results, status) {
                    if (status == google.maps.places.PlacesServiceStatus.OK) {
                        for (var i = 0; i < results.length; i++) {
@@ -76,10 +69,9 @@ angular.module('starter', ['ionic', 'ngCordova'])
                }
 
                function createMarker(place) {
-                   var placeLoc = place.geometry.location;
-
                    var marker = new google.maps.Marker({
                        map: map,
+                       icon:"img/grey.png",
                        position: place.geometry.location
                    });
 
@@ -90,73 +82,94 @@ angular.module('starter', ['ionic', 'ngCordova'])
                     function () {
                         console.log(place.id);
 
-                        fetch(place);
+                        function prepareInfoWindow(response) {
+
+                            var head = "<h4>" + place.name + "</h4>";
+                            
+                            var takeCash = "<div style=\"display: none;\" id=\"TakeCash\">" +
+                            					"<div class=\"container\">\r\n" +
+                            					"<input type = \"hidden\" value = " +place.id+ " name = \"id\" id = \"id\">"+
+                            					"<input type = \"hidden\" value = " +new Date().getTime()+ " name = \"time\" id = \"time\">"+
+
+                            					"<a href=\"#\" onclick=\"showQueue()\" class=\"button turquoise\"><span>\u2713<\/span>has cash<\/a>" +
+                            					"<a href=\"#\" onclick=\"noCash()\" class=\"button red\"><span>\u2713<\/span>no cash<\/a>" +
+                            					"\r\n<\/div>\r\n\r\n" +
+                            					"</div>";
+                            
+                            var takeQueue = "<div style=\"display: none;\" id=\"TakeQueue\" >" +
+        										"<div class=\"container\">\r\n" +
+
+                            					"<div><b>Wait time : </b></div>"+
+        										"<a href=\"#\" onclick=\"noWait()\" class=\"button turquoise\"><span>\u2713<\/span>not much<\/a>" +
+        										"<a href=\"#\" onclick=\"mediumWait()\" class=\"button orange\"><span>\u2713<\/span>around thirty minutes<\/a>\r\n" +
+        										"<a href=\"#\" onclick=\"longWait()\" class=\"button red\"><span>\u2713<\/span>lot more<\/a>\r\n" +
+        										"<\/div>\r\n\r\n" +
+        										"</div>";
+                            
+                            if (response.data.Count == 0) {
+                                var dontKnow = "<p>There is no recent update about this ATM. Please help others if you have any : </p>"
+                                infowindow.setContent(head + dontKnow + takeCash + takeQueue);
+                                document.getElementById("TakeCash").style.display = "block";
+
+                            } else {
+
+                                var content =
+                                      "<div id=\"Updated\">\r\n " +
+                                      " <p>As of " + new Date(response.data.List[0].time).toLocaleString() + 
+                                      " the ATM    " + status(response.data.List[0].cash) + "<p>\r\n" +
+                                      " <button type=\"button\" onclick=\"TakeCash()\">Have updates?</button>" +
+                                      "</div>";
+                                infowindow.setContent(head + content + takeCash + takeQueue);
+                            }
+                            
+                            function status(cash) {
+                            	if(cash === "yes") {
+                            		return "has cash with not much wait time.";
+                            	} else if(cash === "medium") {
+                            		return "has cash with around thirty minutes wait time.";
+                            	} else if(cash === "long") {
+                            		return "has cash with around really long wait time.";
+                            	} else {
+                            		return "does't have cash";
+                            	}
+                            }
+
+
+                        }
+
+                        fetch(place, prepareInfoWindow);
                         infowindow.open(map, this);
                     });
 
-                   $http.get(
-                           "https://e5vpc3sxzd.execute-api.ap-southeast-1.amazonaws.com/atm/status/" + place.id)
-                          .then(
-                                 function (response) {
-                                     if (response.data.Count != 0) {
-                                         if (response.data.List[0].cash === "true") {
-                                             marker.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
-                                         } else {
-                                             marker.setIcon('http://maps.google.com/mapfiles/ms/icons/red-dot.png');
-                                         }
-                                     }
-                                 });
+                   function colorMarker(response) {
+                       if (response.data.Count != 0) {
+                           if (response.data.List[0].cash === "yes") {
+                               marker.setIcon('img/green.png');
+                           } else if (response.data.List[0].cash === "medium") {
+                               marker.setIcon('img/yellow.png');
+                           } else if (response.data.List[0].cash === "no") {
+                               marker.setIcon('img/red.png');
+                           } else {
+                        	   marker.setIcon('img/blue.png');
+                           }
+                       } else {
+                    	   marker.setIcon('img/grey.png');
+                       }
+                   }
+
+
+                   fetch(place, colorMarker);
 
 
                    return marker;
                }
 
 
-               function fetch(place) {
-
-                   httpBackup = $http;
-                   $http.get(
-                     "https://e5vpc3sxzd.execute-api.ap-southeast-1.amazonaws.com/atm/status/" + place.id)
-                    .then(
-                     function (response, $http) {
-
-                         var head =
-                             "<h2>" + place.name + "</h2>";
-
-                         var takeInput =
-                               "<div style=\"display: none;\" id=\"TakeUpdate\">\r\n " +
-                           "<form name=\"myForm\"  method=\"post\">" +
-                           "\r\n<input type=\"hidden\" id=\"id\" name=\"id\" value=" + place.id + " />" +
-                           "\r\n<input type=\"hidden\" id=\"time\" name=\"time\" value=" + new Date().getTime() + " />" +
-                           "\r\nCash: <input type=\"checkbox\" id=\"cash\" name=\"cash\" />" +
-                       "\r\nQueue: <input type=\"checkbox\" id=\"queue\" name=\"queue\" />" +
-
-                       "\r\n<input type=\"button\" onClick=\"post()\" value=\"Submit\" />" +
-                       "</form>" +
-                       "</div>";
-                         if (response.data.Count == 0) {
-                             var dontKnow = "<p>There is no recent update about this ATM. Please help others if you have any : </p>"
-                             infowindow.setContent(head + dontKnow + takeInput);
-                             document.getElementById("TakeUpdate").style.display = "block";
-
-                         } else {
-
-                             var content =
-
-                                   "<div id=\"Updated\">\r\n " +
-
-                                   " <p>As of " + new Date(response.data.List[0].time).toLocaleString() + "<p>\r\n" +
-                                   " <p>Cash   " + (response.data.List[0].cash === "true" ? "Yes" : "No") + "<p>\r\n" +
-                                   " <p>Queue   " + (response.data.List[0].queue === "true" ? "Yes" : "No") + "<p>\r\n" +
-                                   " <button type=\"button\" onclick=\"takeUpdate()\">Have updates?</button>" +
-                                   "</div>";
-                             infowindow.setContent(head + content + takeInput);
-                         }
-
-
-                     });
+               function fetch(place, action) {
+                   $http.get("https://e5vpc3sxzd.execute-api.ap-southeast-1.amazonaws.com/atm/status/" + place.id)
+                    .then(action);
                }
-               
+
                function markAllAtmsInTheArea(position) {
 
                    var request = {
@@ -165,19 +178,10 @@ angular.module('starter', ['ionic', 'ngCordova'])
                        disableDefaultUI: true,
                        radius: '2500',
                        types: ['atm']
-                   };
-
+                   }
 
                    service.nearbySearch(request, callback);
                    infowindow = new google.maps.InfoWindow();
-
-                   
-
-
-
-
-
-
                }
 
                var handle = function () {
@@ -203,6 +207,16 @@ angular.module('starter', ['ionic', 'ngCordova'])
 
            }
 
+           function createMap(latLng) {
+               var mapOptions = {
+                   center: latLng,
+                   zoom: 17,
+                   mapTypeId: google.maps.MapTypeId.ROADMAP,
+                   disableDefaultUI: true,
+               }
+
+               return new google.maps.Map(document.getElementById('map'), mapOptions);
+           }
        }
 
 
@@ -212,21 +226,42 @@ angular.module('starter', ['ionic', 'ngCordova'])
 
 
 
-
-function takeUpdate() {
+function TakeCash() {
     document.getElementById("Updated").style.display = "none";
-    document.getElementById("TakeUpdate").style.display = "block";
+    document.getElementById("TakeCash").style.display = "block";
 }
 
-function post() {
-    var id = document.getElementById("id").value;
-    var data = {
-        id: document.getElementById("id").value,
-        time: document.getElementById("time").value,
-        cash: document.getElementById("cash").checked,
-        queue: document.getElementById("queue").checked,
+function showQueue() {
+	document.getElementById("TakeCash").style.display = "none";
+    
 
-    }
+    document.getElementById("TakeQueue").style.display = "block";
+}
+
+function noCash() {
+    post("no");
+}
+
+function noWait() {
+    post("yes");
+}
+
+function mediumWait() {
+    post("medium");
+}
+
+function longWait() {
+    post("long");
+}
+
+function post(cashVal) {
+	 var id = document.getElementById("id").value;
+	 var data = {
+	   id: document.getElementById("id").value,
+	   time: document.getElementById("time").value,
+	   cash: "" + cashVal
+	}
+   
     var anchor = infowindow.anchor;
     $.ajax({
 
@@ -241,12 +276,24 @@ function post() {
                 url: "https://e5vpc3sxzd.execute-api.ap-southeast-1.amazonaws.com/atm/status/" + id,
                 success:
                           function (response) {
+                			  console.log(response.Count);
                               if (response.Count != 0) {
-                                  if (response.List[0].cash === "true") {
-                                      anchor.setIcon('http://maps.google.com/mapfiles/ms/icons/green-dot.png');
+                                  if (response.Count != 0) {
+                                      if (response.List[0].cash === "yes") {
+                                    	  anchor.setIcon('img/green.png');
+                                      } else if (response.List[0].cash === "medium") {
+                                    	  anchor.setIcon('img/yellow.png');
+                                      } else if (response.List[0].cash === "no") {
+                                    	  anchor.setIcon('img/red.png');
+                                      } else {
+                                    	  anchor.setIcon('img/blue.png');
+                                      }
                                   } else {
-                                      anchor.setIcon('http://maps.google.com/mapfiles/ms/icons/red-dot.png');
+                                	  anchor.setIcon('img/grey.png');
                                   }
+                                  
+                              } else {
+                                  anchor.setIcon('img/grey.png');
                               }
                           }
 
