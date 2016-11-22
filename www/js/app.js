@@ -91,18 +91,18 @@ angular.module('starter', ['ionic', 'ngCordova'])
                             					"<input type = \"hidden\" value = " +place.id+ " name = \"id\" id = \"id\">"+
                             					"<input type = \"hidden\" value = " +new Date().getTime()+ " name = \"time\" id = \"time\">"+
 
-                            					"<a href=\"#\" onclick=\"showQueue()\" class=\"button turquoise\"><span>\u2713<\/span>has cash<\/a>" +
-                            					"<a href=\"#\" onclick=\"noCash()\" class=\"button red\"><span>\u2713<\/span>no cash<\/a>" +
+                            					"<button onclick=\"showQueue()\" >has cash<\/button>\r\n" +
+                            					"<button onclick=\"noCash()\" >no cash<\/button>" +
                             					"\r\n<\/div>\r\n\r\n" +
                             					"</div>";
                             
                             var takeQueue = "<div style=\"display: none;\" id=\"TakeQueue\" >" +
         										"<div class=\"container\">\r\n" +
 
-                            					"<div><b>Wait time : </b></div>"+
-        										"<a href=\"#\" onclick=\"noWait()\" class=\"button turquoise\"><span>\u2713<\/span>not much<\/a>" +
-        										"<a href=\"#\" onclick=\"mediumWait()\" class=\"button orange\"><span>\u2713<\/span>around thirty minutes<\/a>\r\n" +
-        										"<a href=\"#\" onclick=\"longWait()\" class=\"button red\"><span>\u2713<\/span>lot more<\/a>\r\n" +
+                            					"<div>Wait time : </div>"+
+        										"<button onclick=\"noWait()\" >not much<\/button>\r\n" +
+        										"<button onclick=\"mediumWait()\" >around 30 minutes<\/button>\r\n" +
+        										"<button onclick=\"longWait()\" >lot more<\/button>\r\n" +
         										"<\/div>\r\n\r\n" +
         										"</div>";
                             
@@ -130,7 +130,7 @@ angular.module('starter', ['ionic', 'ngCordova'])
                             	} else if(cash === "long") {
                             		return "has cash with around really long wait time.";
                             	} else {
-                            		return "does't have cash";
+                            		return "does't have cash.";
                             	}
                             }
 
@@ -298,6 +298,7 @@ function post(cashVal) {
                           }
 
             });
+            infowindow.setContent("");
             infowindow.close();
         },
         data: JSON.stringify(data)
