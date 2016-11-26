@@ -115,8 +115,8 @@ angular.module('starter', ['ionic', 'ngCordova'])
 
                                 var content =
                                       "<div id=\"Updated\">\r\n " +
-                                      " <p>As of " + new Date(response.data.List[0].time).toLocaleString() + 
-                                      " the ATM    " + status(response.data.List[0].cash) + "<p>\r\n" +
+                                      " <p>As reported " + prettyDate((response.data.List[0].time)) + 
+                                      ", the ATM " + status(response.data.List[0].cash) + "<p>\r\n" +
                                       " <button type=\"button\" onclick=\"TakeCash()\">Have updates?</button>" +
                                       "</div>";
                                 infowindow.setContent(head + content + takeCash + takeQueue);
@@ -150,7 +150,7 @@ angular.module('starter', ['ionic', 'ngCordova'])
                            } else if (response.data.List[0].cash === "no") {
                                marker.setIcon('img/red.png');
                            } else {
-                        	   marker.setIcon('img/blue.png');
+                        	   marker.setIcon('img/yellow.png');
                            }
                        } else {
                     	   marker.setIcon('img/grey.png');
@@ -286,7 +286,7 @@ function post(cashVal) {
                                       } else if (response.List[0].cash === "no") {
                                     	  anchor.setIcon('img/red.png');
                                       } else {
-                                    	  anchor.setIcon('img/blue.png');
+                                    	  anchor.setIcon('img/yellow.png');
                                       }
                                   } else {
                                 	  anchor.setIcon('img/grey.png');
